@@ -1,24 +1,35 @@
 const std = @import("std");
 
-pub fn main() !void {
-    // Prints to stderr (it's a shortcut based on `std.io.getStdErr()`)
-    std.debug.print("All your {s} are belong to us.\n", .{"codebase"});
+// Prints to stderr (it's a shortcut based on `std.io.getStdErr()`)
+const dbg = std.debug.print;
 
-    // stdout is for the actual output of your application, for example if you
-    // are implementing gzip, then only the compressed bytes should be sent to
-    // stdout, not any debugging messages.
+pub fn main() !void {
+    const imageWidth = 256;
+    const imageHeight = 256;
+
     const stdout_file = std.io.getStdOut().writer();
     var bw = std.io.bufferedWriter(stdout_file);
     const stdout = bw.writer();
 
-    try stdout.print("Run `zig build test` to run the tests.\n", .{});
+    try stdout.print("P3\n{d} {d}\n255\n", .{ imageWidth, imageHeight });
 
-    try bw.flush(); // don't forget to flush!
-}
+    for (0..imageHeight) |y| {
+        dbg("Lines remaining: {d}\n", .{imageHeight - y});
+        for (0..imageWidth) |x| {
+            const fx: f64 = @floatFromInt(x);
+            const fy: f64 = @floatFromInt(y);
+            const r: f64 = fx / (@as(f64, imageWidth - 1));
+            const g: f64 = fy / (@as(f64, imageHeight - 1));
+            const b: f64 = 0.0;
 
-test "simple test" {
-    var list = std.ArrayList(i32).init(std.testing.allocator);
-    defer list.deinit(); // try commenting this out and see if zig detects the memory leak!
-    try list.append(42);
-    try std.testing.expectEqual(@as(i32, 42), list.pop());
+            const ir: u8 = @intFromFloat(r * 255);
+            const ig: u8 = @intFromFloat(g * 255);
+            const ib: u8 = @intFromFloat(b * 255);
+
+            try stdout.print("{d} {d} {d}\n", .{ ir, ig, ib });
+        }
+    }
+    dbg("Done.\n", .{});
+
+    try bw.flush();
 }
