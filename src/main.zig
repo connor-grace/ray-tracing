@@ -6,20 +6,34 @@ const Vector = @import("vector.zig").Vector;
 // Prints to stderr (it's a shortcut based on `std.io.getStdErr()`)
 const dbg = std.debug.print;
 
+fn hitSphere(center: Vector, radius: f64, ray: Ray) bool {
+    const oc = center.sub(ray.origin);
+    const a = ray.direction.dot(ray.direction);
+    const b = -2.0 * ray.direction.dot(oc);
+    const c = oc.dot(oc) - radius * radius;
+    const discriminant = b * b - 4 * a * c;
+
+    return discriminant >= 0;
+}
+
 fn rayColor(ray: Ray) Color {
+    if (hitSphere(Vector{ .x = 0, .y = 0, .z = -1 }, 0.5, ray))
+        return Color{ .r = 1, .b = 0, .g = 0 };
+
     // Calculate lerp (linear blend): blendedValue = (1 − a) * startValue + a * endValue
     const unitDirection = ray.direction.unitVector();
     const a = 0.5 * (unitDirection.y + 1.0);
     const startColor = Color{
-        .r = 1.0,
-        .b = 1.0,
-        .g = 1.0,
+        .r = 1,
+        .b = 1,
+        .g = 1,
     };
     const endColor = Color{
         .r = 0.5,
         .b = 0.7,
-        .g = 1.0,
+        .g = 1,
     };
+
     return startColor.scale(1.0 - a).add(endColor.scale(a));
 }
 

@@ -29,6 +29,18 @@ pub const Vector = struct {
         };
     }
 
+    pub fn dot(self: Vector, other: Vector) f64 {
+        return self.x * other.x + self.y * other.y + self.z * other.z;
+    }
+
+    pub fn cross(self: Vector, other: Vector) Vector {
+        return Vector{
+            .x = self.y * other.z - self.z * other.y,
+            .y = self.z * other.x - self.x * other.z,
+            .z = self.x * other.y - self.y * other.x,
+        };
+    }
+
     pub fn length(self: Vector) f64 {
         return std.math.sqrt(lengthSquared(self));
     }
@@ -43,9 +55,9 @@ pub const Vector = struct {
 
     pub fn print(self: Vector, writer: anytype) !void {
         try writer.print("{d} {d} {d}\n", .{
-            self.x * 255,
-            self.y * 255,
-            self.z * 255,
+            self.x,
+            self.y,
+            self.z,
         });
     }
 };
