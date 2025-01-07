@@ -1,5 +1,6 @@
 const std = @import("std");
 
+const Interval = @import("interval.zig").Interval;
 const HitRecord = @import("hitrecord.zig").HitRecord;
 const Ray = @import("ray.zig").Ray;
 const Sphere = @import("sphere.zig").Sphere;
@@ -11,13 +12,14 @@ pub const HitList = struct {
         try self.list.append(object);
     }
 
-    pub fn hit(self: HitList, ray: Ray, rayTMin: f64, rayTMax: f64, hitRecord: *HitRecord) bool {
+    pub fn hit(self: HitList, ray: Ray, interval: Interval, hitRecord: *HitRecord) bool {
         var tempHitRecord: HitRecord = undefined;
         var hitAnything = false;
-        var closestSoFar = rayTMax;
+        var closestSoFar = interval.max;
 
         for (self.list.items) |object| {
-            if (object.hit(ray, rayTMin, closestSoFar, &tempHitRecord)) {
+            const i = Interval{ .min = interval.min, .max = closestSoFar };
+            if (object.hit(ray, i, &tempHitRecord)) {
                 hitAnything = true;
                 closestSoFar = tempHitRecord.t;
                 hitRecord.* = tempHitRecord;
