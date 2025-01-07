@@ -1,47 +1,68 @@
 const std = @import("std");
-const Color = @import("color.zig").Color;
+const HitList = @import("hitlist.zig").HitList;
+const HitRecord = @import("hitrecord.zig").HitRecord;
 const Ray = @import("ray.zig").Ray;
+const Sphere = @import("sphere.zig").Sphere;
 const Vector = @import("vector.zig").Vector;
 
 // Prints to stderr (it's a shortcut based on `std.io.getStdErr()`)
 const dbg = std.debug.print;
 
-fn hitSphere(center: Vector, radius: f64, ray: Ray) bool {
+fn hitSphere(center: Vector, radius: f64, ray: Ray) f64 {
     const oc = center.sub(ray.origin);
-    const a = ray.direction.dot(ray.direction);
-    const b = -2.0 * ray.direction.dot(oc);
-    const c = oc.dot(oc) - radius * radius;
-    const discriminant = b * b - 4 * a * c;
+    const a = ray.direction.lengthSquared();
+    const h = ray.direction.dot(oc);
+    const c = oc.lengthSquared() - radius * radius;
+    const discriminant = h * h - a * c;
 
-    return discriminant >= 0;
+    if (discriminant < 0) {
+        return -1;
+    } else {
+        return (h - std.math.sqrt(discriminant)) / a;
+    }
 }
 
-fn rayColor(ray: Ray) Color {
-    if (hitSphere(Vector{ .x = 0, .y = 0, .z = -1 }, 0.5, ray))
-        return Color{ .r = 1, .b = 0, .g = 0 };
+fn rayColor(ray: Ray, world: HitList) Vector {
+    var hitRecord: HitRecord = undefined;
+    if (world.hit(ray, 0, std.math.floatMax(f64), &hitRecord)) {
+        const color = Vector{ .x = 1, .y = 1, .z = 1 };
+        return hitRecord.normal.add(color).scale(0.5);
+    }
 
     // Calculate lerp (linear blend): blendedValue = (1 − a) * startValue + a * endValue
     const unitDirection = ray.direction.unitVector();
     const a = 0.5 * (unitDirection.y + 1.0);
-    const startColor = Color{
-        .r = 1,
-        .b = 1,
-        .g = 1,
+    const startColor = Vector{
+        .x = 1,
+        .y = 1,
+        .z = 1,
     };
-    const endColor = Color{
-        .r = 0.5,
-        .b = 0.7,
-        .g = 1,
+    const endColor = Vector{
+        .x = 0.5,
+        .y = 0.7,
+        .z = 1,
     };
 
     return startColor.scale(1.0 - a).add(endColor.scale(a));
 }
 
 pub fn main() !void {
+    var generalPurposeAllocator = std.heap.GeneralPurposeAllocator(.{}){};
+    const gpa = generalPurposeAllocator.allocator();
+    defer {
+        const deinitStatus = generalPurposeAllocator.deinit();
+        if (deinitStatus == .leak) @panic("Memory leaked");
+    }
+
     const aspectRatio: f64 = 16.0 / 9.0;
     const imageWidth: u32 = 400;
     var imageHeight: u32 = @as(f64, imageWidth) / aspectRatio;
     imageHeight = if (imageHeight < 1) 1 else imageHeight;
+
+    var world: HitList = HitList{ .list = std.ArrayList(Sphere).init(gpa) };
+    defer world.list.deinit();
+    try world.add(.{ .center = .{ .x = 0, .y = 0, .z = -1 }, .radius = 0.5 });
+    try world.add(.{ .center = .{ .x = 0, .y = -100.5, .z = -1 }, .radius = 100 });
 
     const focalLength: f64 = 1.0;
     const viewportHeight: f64 = 2.0;
@@ -92,8 +113,8 @@ pub fn main() !void {
                 .direction = rayDirection,
             };
 
-            const pixelColor = rayColor(ray);
-            try pixelColor.print(stdout);
+            const pixelColor = rayColor(ray, world);
+            try pixelColor.printAsColor(stdout);
         }
     }
     dbg("Done.\n", .{});

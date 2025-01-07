@@ -60,4 +60,12 @@ pub const Vector = struct {
             self.z,
         });
     }
+
+    pub fn printAsColor(self: Vector, writer: anytype) !void {
+        try writer.print("{d} {d} {d}\n", .{
+            @as(u8, @intFromFloat(self.x * 255.999)),
+            @as(u8, @intFromFloat(self.y * 255.999)),
+            @as(u8, @intFromFloat(self.z * 255.999)),
+        });
+    }
 };

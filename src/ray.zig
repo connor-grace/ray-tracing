@@ -5,6 +5,6 @@ pub const Ray = struct {
     direction: Vector,
 
     pub fn at(self: Ray, t: f64) Vector {
-        self.origin.add(self.direction.scale(t));
+        return self.origin.add(self.direction.scale(t));
     }
 };
