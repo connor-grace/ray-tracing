@@ -7,6 +7,7 @@ const Ray = @import("ray.zig").Ray;
 const Vector = @import("vector.zig").Vector;
 
 const dbg = std.debug.print;
+var prng = std.rand.DefaultPrng.init(0);
 
 pub const Camera = struct {
     aspectRatio: f64 = 1.0,
@@ -16,6 +17,8 @@ pub const Camera = struct {
     pixel00Location: Vector = undefined,
     pixelDeltaU: Vector = undefined,
     pixelDeltaV: Vector = undefined,
+    samplesPerPixel: u32 = 10,
+    pixelSamplesScale: f64 = undefined,
 
     pub fn render(self: *Camera, world: HitList) !void {
         self.initialize();
@@ -26,18 +29,15 @@ pub const Camera = struct {
 
         try stdout.print("P3\n{d} {d}\n255\n", .{ self.imageWidth, self.imageHeight });
 
-        for (0..self.imageHeight) |y| {
-            dbg("Lines remaining: {d}\n", .{self.imageHeight - y});
-            for (0..self.imageWidth) |x| {
-                const pixelCenter = self.pixel00Location.add(self.pixelDeltaU.scale(@floatFromInt(x))).add(self.pixelDeltaV.scale(@floatFromInt(y)));
-                const rayDirection = pixelCenter.sub(self.center);
-                const ray = Ray{
-                    .origin = self.center,
-                    .direction = rayDirection,
-                };
-
-                const pixelColor = rayColor(ray, world);
-                try pixelColor.printAsColor(stdout);
+        for (0..self.imageHeight) |j| {
+            dbg("Lines remaining: {d}\n", .{self.imageHeight - j});
+            for (0..self.imageWidth) |i| {
+                var pixelColor = Vector{ .x = 0, .y = 0, .z = 0 };
+                for (0..self.samplesPerPixel) |_| {
+                    const ray = self.getRay(@as(u32, @intCast(i)), @as(u32, @intCast(j)));
+                    pixelColor = pixelColor.add(rayColor(ray, world));
+                }
+                try pixelColor.scale(self.pixelSamplesScale).printAsColor(stdout);
             }
         }
         dbg("Done.\n", .{});
@@ -48,6 +48,8 @@ pub const Camera = struct {
     fn initialize(self: *Camera) void {
         self.imageHeight = @intFromFloat(@as(f64, @floatFromInt(self.imageWidth)) / self.aspectRatio);
         self.imageHeight = if (self.imageHeight < 1) 1 else self.imageHeight;
+
+        self.pixelSamplesScale = 1.0 / @as(f64, @floatFromInt(self.samplesPerPixel));
 
         const focalLength: f64 = 1.0;
         const viewportHeight: f64 = 2.0;
@@ -68,6 +70,33 @@ pub const Camera = struct {
         }).sub(viewportU.scale(0.5)).sub(viewportV.scale(0.5));
 
         self.pixel00Location = viewportUpperLeft.add(self.pixelDeltaU.add(self.pixelDeltaV).scale(0.5));
+    }
+
+    fn getRay(self: Camera, i: u32, j: u32) Ray {
+        // Create ray from camera origin to randomly sampled point around i, j
+        const offset = sampleSquare();
+        const pixelSample = self.pixel00Location
+            .add(self.pixelDeltaU.scale(@as(f64, @floatFromInt(i)) + offset.x))
+            .add(self.pixelDeltaV.scale(@as(f64, @floatFromInt(j)) + offset.y));
+
+        const rayOrigin = self.center;
+        const rayDirection = pixelSample.sub(rayOrigin);
+
+        return Ray{ .origin = rayOrigin, .direction = rayDirection };
+    }
+
+    fn sampleSquare() Vector {
+        // Returns the vector to a random point in the [-.5,-.5]-[+.5,+.5] unit square.
+        const randX = prng.random().float(f64);
+        const randY = prng.random().float(f64);
+
+        //dbg("rx: {d}, ry: {d}", .{ randX, randY });
+
+        return Vector{
+            .x = randX - 0.5,
+            .y = randY - 0.5,
+            .z = 0,
+        };
     }
 
     fn rayColor(ray: Ray, world: HitList) Vector {

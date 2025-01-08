@@ -5,8 +5,12 @@ const HitList = @import("hitlist.zig").HitList;
 const Sphere = @import("sphere.zig").Sphere;
 const Vector = @import("vector.zig").Vector;
 
-// Prints to stderr (it's a shortcut based on `std.io.getStdErr()`)
 const dbg = std.debug.print;
+
+fn randomF64(min: f64, max: f64) f64 {
+    // Returns a random real in [min,max).
+    return (max - min) * std.rand.float(f64) + min;
+}
 
 pub fn main() !void {
     var generalPurposeAllocator = std.heap.GeneralPurposeAllocator(.{}){};
@@ -24,5 +28,6 @@ pub fn main() !void {
     var camera: Camera = Camera{};
     camera.aspectRatio = 16.0 / 9.0;
     camera.imageWidth = 400;
+    camera.samplesPerPixel = 100;
     try camera.render(world);
 }

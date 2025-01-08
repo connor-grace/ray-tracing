@@ -1,5 +1,7 @@
 const std = @import("std");
 
+const Interval = @import("interval.zig").Interval;
+
 pub const Vector = struct {
     x: f64,
     y: f64,
@@ -62,10 +64,11 @@ pub const Vector = struct {
     }
 
     pub fn printAsColor(self: Vector, writer: anytype) !void {
+        const intensity = Interval{ .min = 0, .max = 0.999 };
         try writer.print("{d} {d} {d}\n", .{
-            @as(u8, @intFromFloat(self.x * 255.999)),
-            @as(u8, @intFromFloat(self.y * 255.999)),
-            @as(u8, @intFromFloat(self.z * 255.999)),
+            @as(u8, @intFromFloat(256 * intensity.clamp(self.x))),
+            @as(u8, @intFromFloat(256 * intensity.clamp(self.y))),
+            @as(u8, @intFromFloat(256 * intensity.clamp(self.z))),
         });
     }
 };
