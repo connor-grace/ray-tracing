@@ -7,11 +7,6 @@ const Vector = @import("vector.zig").Vector;
 
 const dbg = std.debug.print;
 
-fn randomF64(min: f64, max: f64) f64 {
-    // Returns a random real in [min,max).
-    return (max - min) * std.rand.float(f64) + min;
-}
-
 pub fn main() !void {
     var generalPurposeAllocator = std.heap.GeneralPurposeAllocator(.{}){};
     const gpa = generalPurposeAllocator.allocator();
@@ -29,5 +24,6 @@ pub fn main() !void {
     camera.aspectRatio = 16.0 / 9.0;
     camera.imageWidth = 400;
     camera.samplesPerPixel = 100;
+    camera.maxDepth = 50;
     try camera.render(world);
 }

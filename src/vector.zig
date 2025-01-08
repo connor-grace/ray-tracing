@@ -2,6 +2,8 @@ const std = @import("std");
 
 const Interval = @import("interval.zig").Interval;
 
+var prng = std.rand.DefaultPrng.init(0);
+
 pub const Vector = struct {
     x: f64,
     y: f64,
@@ -55,6 +57,25 @@ pub const Vector = struct {
         return self.scale(1.0 / self.length());
     }
 
+    pub fn randomUnitVector() Vector {
+        while (true) {
+            const p = randomBound(-1, 1);
+            const lensq = p.lengthSquared();
+            if (1e-160 < lensq and p.lengthSquared() <= 1) {
+                return p.scale(1.0 / std.math.sqrt(lensq));
+            }
+        }
+    }
+
+    pub fn randomOnHemisphere(normal: Vector) Vector {
+        const onUnitSphere = randomUnitVector();
+        if (onUnitSphere.dot(normal) > 0.0) {
+            return onUnitSphere;
+        } else {
+            return onUnitSphere.scale(-1);
+        }
+    }
+
     pub fn print(self: Vector, writer: anytype) !void {
         try writer.print("{d} {d} {d}\n", .{
             self.x,
@@ -72,3 +93,24 @@ pub const Vector = struct {
         });
     }
 };
+
+fn randomF64(min: f64, max: f64) f64 {
+    // Returns a random real in [min,max).
+    return (max - min) * prng.random().float(f64) + min;
+}
+
+pub fn random() Vector {
+    return Vector{
+        .x = prng.random().float(f64),
+        .y = prng.random().float(f64),
+        .z = prng.random().float(f64),
+    };
+}
+
+pub fn randomBound(min: f64, max: f64) Vector {
+    return Vector{
+        .x = randomF64(min, max),
+        .y = randomF64(min, max),
+        .z = randomF64(min, max),
+    };
+}

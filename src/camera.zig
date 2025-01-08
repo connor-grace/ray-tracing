@@ -19,6 +19,7 @@ pub const Camera = struct {
     pixelDeltaV: Vector = undefined,
     samplesPerPixel: u32 = 10,
     pixelSamplesScale: f64 = undefined,
+    maxDepth: u32 = 10,
 
     pub fn render(self: *Camera, world: HitList) !void {
         self.initialize();
@@ -35,7 +36,7 @@ pub const Camera = struct {
                 var pixelColor = Vector{ .x = 0, .y = 0, .z = 0 };
                 for (0..self.samplesPerPixel) |_| {
                     const ray = self.getRay(@as(u32, @intCast(i)), @as(u32, @intCast(j)));
-                    pixelColor = pixelColor.add(rayColor(ray, world));
+                    pixelColor = pixelColor.add(rayColor(ray, self.maxDepth, world));
                 }
                 try pixelColor.scale(self.pixelSamplesScale).printAsColor(stdout);
             }
@@ -99,12 +100,18 @@ pub const Camera = struct {
         };
     }
 
-    fn rayColor(ray: Ray, world: HitList) Vector {
+    fn rayColor(ray: Ray, depth: u32, world: HitList) Vector {
+        if (depth <= 0) return Vector{ .x = 0, .y = 0, .z = 0 };
         var hitRecord: HitRecord = undefined;
         const interval = Interval{ .min = 0, .max = std.math.inf(f64) };
         if (world.hit(ray, interval, &hitRecord)) {
-            const color = Vector{ .x = 1, .y = 1, .z = 1 };
-            return hitRecord.normal.add(color).scale(0.5);
+            // const color = Vector{ .x = 1, .y = 1, .z = 1 };
+            // return hitRecord.normal.add(color).scale(0.5);
+            const direction = Vector.randomOnHemisphere(hitRecord.normal);
+            return rayColor(Ray{
+                .origin = hitRecord.point,
+                .direction = direction,
+            }, depth - 1, world).scale(0.5);
         }
 
         // Calculate lerp (linear blend): blendedValue = (1 − a) * startValue + a * endValue
