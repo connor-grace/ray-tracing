@@ -2,17 +2,20 @@ const std = @import("std");
 
 const HitRecord = @import("hitrecord.zig").HitRecord;
 const Interval = @import("interval.zig").Interval;
+const Material = @import("material.zig").Material;
 const Ray = @import("ray.zig").Ray;
 const Vector = @import("vector.zig").Vector;
 
 pub const Sphere = struct {
     center: Vector,
     radius: f64,
+    material: Material,
 
-    pub fn init(center: Vector, radius: f64) Sphere {
+    pub fn init(center: Vector, radius: f64, material: Material) Sphere {
         return Sphere{
             .center = center,
             .radius = if (radius > 0) radius else 0,
+            .material = material,
         };
     }
 
@@ -40,6 +43,7 @@ pub const Sphere = struct {
         hitRecord.point = ray.at(hitRecord.t);
         hitRecord.normal = hitRecord.point.sub(self.center).scale(1.0 / self.radius);
         hitRecord.setFaceNormal(ray, hitRecord.normal);
+        hitRecord.material = self.material;
 
         return true;
     }

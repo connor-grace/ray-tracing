@@ -3,6 +3,8 @@ const std = @import("std");
 const HitList = @import("hitlist.zig").HitList;
 const HitRecord = @import("hitrecord.zig").HitRecord;
 const Interval = @import("interval.zig").Interval;
+const Material = @import("material.zig").Material;
+const MaterialType = @import("material.zig").Type;
 const Ray = @import("ray.zig").Ray;
 const Vector = @import("vector.zig").Vector;
 
@@ -103,15 +105,32 @@ pub const Camera = struct {
     fn rayColor(ray: Ray, depth: u32, world: HitList) Vector {
         if (depth <= 0) return Vector{ .x = 0, .y = 0, .z = 0 };
         var hitRecord: HitRecord = undefined;
-        const interval = Interval{ .min = 0, .max = std.math.inf(f64) };
+        const interval = Interval{ .min = 0.001, .max = std.math.inf(f64) };
         if (world.hit(ray, interval, &hitRecord)) {
-            // const color = Vector{ .x = 1, .y = 1, .z = 1 };
-            // return hitRecord.normal.add(color).scale(0.5);
-            const direction = Vector.randomOnHemisphere(hitRecord.normal);
+            var scattered: Ray = undefined;
+            var attenuation: Vector = undefined;
+            const isScattered = switch (hitRecord.material.type) {
+                MaterialType.lambertian => hitRecord.material.lambertianScatter(
+                    hitRecord,
+                    &attenuation,
+                    &scattered,
+                ),
+                MaterialType.metal => hitRecord.material.metalScatter(
+                    ray,
+                    hitRecord,
+                    &attenuation,
+                    &scattered,
+                ),
+            };
+            if (isScattered) {
+                return attenuation.mul(rayColor(scattered, depth - 1, world));
+            }
+
+            const direction = hitRecord.normal.add(Vector.randomUnitVector());
             return rayColor(Ray{
                 .origin = hitRecord.point,
                 .direction = direction,
-            }, depth - 1, world).scale(0.5);
+            }, depth - 1, world).scale(0.7);
         }
 
         // Calculate lerp (linear blend): blendedValue = (1 − a) * startValue + a * endValue

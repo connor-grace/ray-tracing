@@ -25,6 +25,14 @@ pub const Vector = struct {
         };
     }
 
+    pub fn mul(self: Vector, other: Vector) Vector {
+        return Vector{
+            .x = self.x * other.x,
+            .y = self.y * other.y,
+            .z = self.z * other.z,
+        };
+    }
+
     pub fn scale(self: Vector, scalar: f64) Vector {
         return Vector{
             .x = self.x * scalar,
@@ -53,6 +61,11 @@ pub const Vector = struct {
         return self.x * self.x + self.y * self.y + self.z * self.z;
     }
 
+    pub fn nearZero(self: Vector) bool {
+        const close = 1e-8;
+        return (@abs(self.x) < close) and (@abs(self.y) < close) and (@abs(self.z) < close);
+    }
+
     pub fn unitVector(self: Vector) Vector {
         return self.scale(1.0 / self.length());
     }
@@ -76,6 +89,10 @@ pub const Vector = struct {
         }
     }
 
+    pub fn reflect(v: Vector, n: Vector) Vector {
+        return v.sub(n.scale(2.0 * v.dot(n)));
+    }
+
     pub fn print(self: Vector, writer: anytype) !void {
         try writer.print("{d} {d} {d}\n", .{
             self.x,
@@ -87,9 +104,9 @@ pub const Vector = struct {
     pub fn printAsColor(self: Vector, writer: anytype) !void {
         const intensity = Interval{ .min = 0, .max = 0.999 };
         try writer.print("{d} {d} {d}\n", .{
-            @as(u8, @intFromFloat(256 * intensity.clamp(self.x))),
-            @as(u8, @intFromFloat(256 * intensity.clamp(self.y))),
-            @as(u8, @intFromFloat(256 * intensity.clamp(self.z))),
+            @as(u8, @intFromFloat(256 * intensity.clamp(linearToGamma(self.x)))),
+            @as(u8, @intFromFloat(256 * intensity.clamp(linearToGamma(self.y)))),
+            @as(u8, @intFromFloat(256 * intensity.clamp(linearToGamma(self.z)))),
         });
     }
 };
@@ -113,4 +130,9 @@ pub fn randomBound(min: f64, max: f64) Vector {
         .y = randomF64(min, max),
         .z = randomF64(min, max),
     };
+}
+
+pub fn linearToGamma(linearComponent: f64) f64 {
+    if (linearComponent > 0) return std.math.sqrt(linearComponent);
+    return 0;
 }
