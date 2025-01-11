@@ -7,6 +7,7 @@ const Material = @import("material.zig").Material;
 const MaterialType = @import("material.zig").Type;
 const Ray = @import("ray.zig").Ray;
 const Vector = @import("vector.zig").Vector;
+const vec = @import("vector.zig");
 
 const dbg = std.debug.print;
 var prng = std.rand.DefaultPrng.init(0);
@@ -22,6 +23,17 @@ pub const Camera = struct {
     samplesPerPixel: u32 = 10,
     pixelSamplesScale: f64 = undefined,
     maxDepth: u32 = 10,
+    verticalFov: f64 = 90,
+    lookFrom: Vector = Vector{ .x = 0, .y = 0, .z = 0 },
+    lookAt: Vector = Vector{ .x = 0, .y = 0, .z = -1 },
+    vUp: Vector = Vector{ .x = 0, .y = 1, .z = 0 },
+    defocusAngle: f64 = 0,
+    focusDistance: f64 = 10,
+    u: Vector = undefined,
+    v: Vector = undefined,
+    w: Vector = undefined,
+    defocusDiskU: Vector = undefined,
+    defocusDiskV: Vector = undefined,
 
     pub fn render(self: *Camera, world: HitList) !void {
         self.initialize();
@@ -54,25 +66,33 @@ pub const Camera = struct {
 
         self.pixelSamplesScale = 1.0 / @as(f64, @floatFromInt(self.samplesPerPixel));
 
-        const focalLength: f64 = 1.0;
-        const viewportHeight: f64 = 2.0;
-        const viewportWidth: f64 = viewportHeight * (@as(f64, @floatFromInt(self.imageWidth)) / @as(f64, @floatFromInt(self.imageHeight)));
+        self.center = self.lookFrom;
 
-        self.center = Vector{ .x = 0, .y = 0, .z = 0 };
+        const theta = degreesToRadians(self.verticalFov);
+        const h = @tan(theta / 2.0);
+        const viewportHeight = 2.0 * h * self.focusDistance;
+        const viewportWidth = viewportHeight * (@as(f64, @floatFromInt(self.imageWidth)) / @as(f64, @floatFromInt(self.imageHeight)));
 
-        const viewportU = Vector{ .x = viewportWidth, .y = 0, .z = 0 };
-        const viewportV = Vector{ .x = 0, .y = -viewportHeight, .z = 0 };
+        self.w = self.lookFrom.sub(self.lookAt).unitVector();
+        self.u = self.vUp.cross(self.w);
+        self.v = self.w.cross(self.u);
+
+        const viewportU = self.u.scale(viewportWidth);
+        const viewportV = self.v.scale(-viewportHeight);
 
         self.pixelDeltaU = viewportU.scale(1.0 / @as(f64, @floatFromInt(self.imageWidth)));
         self.pixelDeltaV = viewportV.scale(1.0 / @as(f64, @floatFromInt(self.imageHeight)));
 
-        const viewportUpperLeft = self.center.sub(Vector{
-            .x = 0,
-            .y = 0,
-            .z = focalLength,
-        }).sub(viewportU.scale(0.5)).sub(viewportV.scale(0.5));
+        const viewportUpperLeft = self.center
+            .sub(self.w.scale(self.focusDistance))
+            .sub(viewportU.scale(0.5))
+            .sub(viewportV.scale(0.5));
 
         self.pixel00Location = viewportUpperLeft.add(self.pixelDeltaU.add(self.pixelDeltaV).scale(0.5));
+
+        const defocusRadius = self.focusDistance * @tan(degreesToRadians(self.defocusAngle / 2.0));
+        self.defocusDiskU = self.u.scale(defocusRadius);
+        self.defocusDiskV = self.v.scale(defocusRadius);
     }
 
     fn getRay(self: Camera, i: u32, j: u32) Ray {
@@ -82,7 +102,7 @@ pub const Camera = struct {
             .add(self.pixelDeltaU.scale(@as(f64, @floatFromInt(i)) + offset.x))
             .add(self.pixelDeltaV.scale(@as(f64, @floatFromInt(j)) + offset.y));
 
-        const rayOrigin = self.center;
+        const rayOrigin = if (self.defocusAngle <= 0) self.center else self.defocusDiskSample();
         const rayDirection = pixelSample.sub(rayOrigin);
 
         return Ray{ .origin = rayOrigin, .direction = rayDirection };
@@ -100,6 +120,13 @@ pub const Camera = struct {
             .y = randY - 0.5,
             .z = 0,
         };
+    }
+
+    fn defocusDiskSample(self: Camera) Vector {
+        const p = vec.randomInUnitDisk();
+        return self.center
+            .add(self.defocusDiskU.scale(p.x))
+            .add(self.defocusDiskV.scale(p.y));
     }
 
     fn rayColor(ray: Ray, depth: u32, world: HitList) Vector {
@@ -137,3 +164,7 @@ pub const Camera = struct {
         return startColor.scale(1.0 - a).add(endColor.scale(a));
     }
 };
+
+fn degreesToRadians(degrees: f64) f64 {
+    return degrees * std.math.pi / 180.0;
+}

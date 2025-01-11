@@ -1,6 +1,10 @@
+const std = @import("std");
+
 const HitRecord = @import("hitrecord.zig").HitRecord;
 const Ray = @import("ray.zig").Ray;
 const Vector = @import("vector.zig").Vector;
+
+var prng = std.rand.DefaultPrng.init(0);
 
 pub const Material = struct {
     type: Type,
@@ -81,7 +85,7 @@ pub const Material = struct {
         const sinTheta = @sqrt(1.0 - cosTheta * cosTheta);
 
         const cannotRefract = ri * sinTheta > 1.0;
-        const direction: Vector = if (cannotRefract)
+        const direction: Vector = if (cannotRefract or reflectance(cosTheta, ri) > prng.random().float(f64))
             Vector.reflect(unitDirection, hitRecord.normal)
         else
             Vector.refract(unitDirection, hitRecord.normal, ri);
@@ -96,3 +100,10 @@ pub const Type = enum {
     metal,
     dialectric,
 };
+
+fn reflectance(cosine: f64, refractionIndex: f64) f64 {
+    // Schlick's approximation
+    var r0 = (1.0 - refractionIndex) / (1.0 + refractionIndex);
+    r0 = r0 * r0;
+    return r0 + (1.0 - r0) * std.math.pow(f64, (1.0 - cosine), 5);
+}

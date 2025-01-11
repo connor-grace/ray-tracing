@@ -30,7 +30,11 @@ pub fn main() !void {
     };
     const materialLeft = Material{
         .type = MaterialType.dialectric,
-        .refractionIndex = 1.00 / 1.33,
+        .refractionIndex = 1.50,
+    };
+    const materialBubble = Material{
+        .type = MaterialType.dialectric,
+        .refractionIndex = 1.00 / 1.50,
     };
     const materialRight = Material{
         .type = MaterialType.metal,
@@ -54,15 +58,51 @@ pub fn main() !void {
         .material = materialLeft,
     });
     try world.add(Sphere{
+        .center = .{ .x = -1, .y = 0, .z = -1 },
+        .radius = 0.4,
+        .material = materialBubble,
+    });
+    try world.add(Sphere{
         .center = .{ .x = 1, .y = 0, .z = -1 },
         .radius = 0.5,
         .material = materialRight,
     });
+
+    // const r = @cos(std.math.pi / 4.0);
+
+    // const materialLeft = Material{
+    //     .type = MaterialType.lambertian,
+    //     .albedo = Vector{ .x = 0, .y = 0, .z = 1 },
+    // };
+    // const materialRight = Material{
+    //     .type = MaterialType.lambertian,
+    //     .albedo = Vector{ .x = 1, .y = 0, .z = 0 },
+    // };
+    //
+    // try world.add(Sphere{
+    //     .center = .{ .x = -r, .y = 0, .z = -1 },
+    //     .radius = r,
+    //     .material = materialLeft,
+    // });
+    // try world.add(Sphere{
+    //     .center = .{ .x = r, .y = 0, .z = -1 },
+    //     .radius = r,
+    //     .material = materialRight,
+    // });
 
     var camera: Camera = Camera{};
     camera.aspectRatio = 16.0 / 9.0;
     camera.imageWidth = 400;
     camera.samplesPerPixel = 100;
     camera.maxDepth = 50;
+
+    camera.verticalFov = 20;
+    camera.lookFrom = Vector{ .x = -2, .y = 2, .z = 1 };
+    camera.lookAt = Vector{ .x = 0, .y = 0, .z = -1 };
+    camera.vUp = Vector{ .x = 0, .y = 1, .z = 0 };
+
+    camera.defocusAngle = 10;
+    camera.focusDistance = 3.4;
+
     try camera.render(world);
 }

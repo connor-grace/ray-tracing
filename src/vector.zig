@@ -139,6 +139,13 @@ pub fn randomBound(min: f64, max: f64) Vector {
     };
 }
 
+pub fn randomInUnitDisk() Vector {
+    while (true) {
+        const p = Vector{ .x = randomF64(-1, 1), .y = randomF64(-1, 1), .z = 0 };
+        if (p.lengthSquared() < 1) return p;
+    }
+}
+
 pub fn linearToGamma(linearComponent: f64) f64 {
     if (linearComponent > 0) return std.math.sqrt(linearComponent);
     return 0;
