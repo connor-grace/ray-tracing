@@ -93,6 +93,13 @@ pub const Vector = struct {
         return v.sub(n.scale(2.0 * v.dot(n)));
     }
 
+    pub fn refract(uv: Vector, n: Vector, etaiOverEtat: f64) Vector {
+        const cosTheta = @min(uv.scale(-1).dot(n), 1.0);
+        const rOutPerp = uv.add(n.scale(cosTheta)).scale(etaiOverEtat);
+        const rOutParallel = n.scale(-@sqrt(@abs(1.0 - rOutPerp.lengthSquared())));
+        return rOutPerp.add(rOutParallel);
+    }
+
     pub fn print(self: Vector, writer: anytype) !void {
         try writer.print("{d} {d} {d}\n", .{
             self.x,

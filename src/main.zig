@@ -21,20 +21,21 @@ pub fn main() !void {
     defer world.list.deinit();
 
     const materialGround = Material{
-        .albedo = Vector{ .x = 0.8, .y = 0.8, .z = 0.0 },
         .type = MaterialType.lambertian,
+        .albedo = Vector{ .x = 0.8, .y = 0.8, .z = 0.0 },
     };
     const materialCenter = Material{
-        .albedo = Vector{ .x = 0.1, .y = 0.2, .z = 0.5 },
         .type = MaterialType.lambertian,
+        .albedo = Vector{ .x = 0.1, .y = 0.2, .z = 0.5 },
     };
     const materialLeft = Material{
-        .albedo = Vector{ .x = 0.8, .y = 0.8, .z = 0.8 },
-        .type = MaterialType.metal,
+        .type = MaterialType.dialectric,
+        .refractionIndex = 1.00 / 1.33,
     };
     const materialRight = Material{
-        .albedo = Vector{ .x = 0.8, .y = 0.6, .z = 0.2 },
         .type = MaterialType.metal,
+        .albedo = Vector{ .x = 0.8, .y = 0.6, .z = 0.2 },
+        .fuzz = 1.0,
     };
 
     try world.add(Sphere{

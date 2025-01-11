@@ -109,20 +109,7 @@ pub const Camera = struct {
         if (world.hit(ray, interval, &hitRecord)) {
             var scattered: Ray = undefined;
             var attenuation: Vector = undefined;
-            const isScattered = switch (hitRecord.material.type) {
-                MaterialType.lambertian => hitRecord.material.lambertianScatter(
-                    hitRecord,
-                    &attenuation,
-                    &scattered,
-                ),
-                MaterialType.metal => hitRecord.material.metalScatter(
-                    ray,
-                    hitRecord,
-                    &attenuation,
-                    &scattered,
-                ),
-            };
-            if (isScattered) {
+            if (hitRecord.material.scatter(ray, hitRecord, &attenuation, &scattered)) {
                 return attenuation.mul(rayColor(scattered, depth - 1, world));
             }
 
