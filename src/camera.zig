@@ -7,7 +7,6 @@ const Material = @import("material.zig").Material;
 const MaterialType = @import("material.zig").Type;
 const Ray = @import("ray.zig").Ray;
 const Vector = @import("vector.zig").Vector;
-const vec = @import("vector.zig");
 
 const dbg = std.debug.print;
 var prng = std.rand.DefaultPrng.init(0);
@@ -123,7 +122,7 @@ pub const Camera = struct {
     }
 
     fn defocusDiskSample(self: Camera) Vector {
-        const p = vec.randomInUnitDisk();
+        const p = Vector.randomInUnitDisk();
         return self.center
             .add(self.defocusDiskU.scale(p.x))
             .add(self.defocusDiskV.scale(p.y));

@@ -116,37 +116,37 @@ pub const Vector = struct {
             @as(u8, @intFromFloat(256 * intensity.clamp(linearToGamma(self.z)))),
         });
     }
-};
 
-fn randomF64(min: f64, max: f64) f64 {
-    // Returns a random real in [min,max).
-    return (max - min) * prng.random().float(f64) + min;
-}
-
-pub fn random() Vector {
-    return Vector{
-        .x = prng.random().float(f64),
-        .y = prng.random().float(f64),
-        .z = prng.random().float(f64),
-    };
-}
-
-pub fn randomBound(min: f64, max: f64) Vector {
-    return Vector{
-        .x = randomF64(min, max),
-        .y = randomF64(min, max),
-        .z = randomF64(min, max),
-    };
-}
-
-pub fn randomInUnitDisk() Vector {
-    while (true) {
-        const p = Vector{ .x = randomF64(-1, 1), .y = randomF64(-1, 1), .z = 0 };
-        if (p.lengthSquared() < 1) return p;
+    pub fn random() Vector {
+        return Vector{
+            .x = prng.random().float(f64),
+            .y = prng.random().float(f64),
+            .z = prng.random().float(f64),
+        };
     }
-}
 
-pub fn linearToGamma(linearComponent: f64) f64 {
-    if (linearComponent > 0) return std.math.sqrt(linearComponent);
-    return 0;
-}
+    pub fn randomInUnitDisk() Vector {
+        while (true) {
+            const p = Vector{ .x = randomF64(-1, 1), .y = randomF64(-1, 1), .z = 0 };
+            if (p.lengthSquared() < 1) return p;
+        }
+    }
+
+    pub fn randomBound(min: f64, max: f64) Vector {
+        return Vector{
+            .x = randomF64(min, max),
+            .y = randomF64(min, max),
+            .z = randomF64(min, max),
+        };
+    }
+
+    pub fn linearToGamma(linearComponent: f64) f64 {
+        if (linearComponent > 0) return std.math.sqrt(linearComponent);
+        return 0;
+    }
+
+    pub fn randomF64(min: f64, max: f64) f64 {
+        // Returns a random real in [min,max).
+        return (max - min) * prng.random().float(f64) + min;
+    }
+};
