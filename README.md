@@ -7,10 +7,9 @@ I completed the [Ray Tracing in One Weekend](https://raytracing.github.io/books/
 
 ### Why?
 
-That is a good question without a singular answer.
-- Zig has caught my eye as an interesting language based on principles I sympathize with.
 - I wanted to try something completely new to me.
-- I have come across people recommending this book multiple times in various forums so I figured it must be worthwhile.
+- Zig has caught my eye as an interesting language based on principles I sympathize with.
+- I have come across multiple recommendations for this book in various forums so I figured it must be worthwhile.
 
 ### Summary
 
